@@ -24,7 +24,7 @@ namespace WindowsFormsApplication1
         {
           
         }
-        private void xMakeZip(string[] srcfiles, string dst_zip_file)
+        private void xMakeZip(List<string> srcfiles,string dstfile)
         {
             //ZipFileを作成する
             using (Ionic.Zip.ZipFile zip = new Ionic.Zip.ZipFile())
@@ -43,16 +43,16 @@ namespace WindowsFormsApplication1
                 //エラーが出てもスキップする。デフォルトはThrow。
                 zip.ZipErrorAction = Ionic.Zip.ZipErrorAction.Skip;
              
-                //ZIP書庫にコメントを付ける
-                //zip.Comment = "こんにちは。";
-                for (int i = 0; i < srcfiles.Length; i++)
+
+                for (int i = 0; i < srcfiles.Count; i++)
                 {
                     string fn = srcfiles[i];
                     //ファイルを追加する
                     zip.AddFile(fn,".");
+
                 }
-                //ZIP書庫を作成する
-                zip.Save(dst_zip_file);
+                //zipを作る
+                zip.Save(dstfile);
             }
         }
         private void Form1_DragDrop(object sender, DragEventArgs e)
@@ -60,11 +60,35 @@ namespace WindowsFormsApplication1
             //コントロール内にドロップされたとき実行される
             //ドロップされたすべてのファイル名を取得する
             string[] fileNames =(string[])e.Data.GetData(DataFormats.FileDrop, false);
-            //ListBoxに追加する
-            //listBox1.Items.AddRange(fileName);
+            long nowsize = 0;
+            long nowfileno = 0;
+            long maxsize=10000;
 
-            xMakeZip(fileNames, "test.zip");
+            xLog(fileNames.Length + "files.");
 
+            var fnlist = new List<string>();    //今回zipするファイル名のリスト
+
+            for (int i = 0; i < fileNames.Length; i++)
+            {
+                fnlist.Add(fileNames[i]);   //リストに追加
+                System.IO.FileInfo fi = new System.IO.FileInfo(fileNames[i]);
+                nowsize += fi.Length;
+                if (nowsize > maxsize)
+                {
+                    string zipfn = nowfileno.ToString() + ".zip";
+                    xMakeZip(fnlist,zipfn);
+                    nowsize = 0;
+                    nowfileno++;
+                    fnlist.Clear();
+
+                }
+            }
+            //残りがあればさいごにzipする
+            if (fnlist.Count > 0)
+            {
+                string zipfn = nowfileno.ToString() + ".zip";
+                xMakeZip(fnlist, zipfn);
+            }
         }
 
         private void Form1_DragEnter(object sender, DragEventArgs e)
